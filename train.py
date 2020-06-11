@@ -93,6 +93,35 @@ def train():
         import visdom
         viz = visdom.Visdom()
 
+    def create_vis_plot(_xlabel, _ylabel, _title, _legend):
+        return viz.line(
+            X=torch.zeros((1,)).cpu(),
+            Y=torch.zeros((1, 3)).cpu(),
+            opts=dict(
+                xlabel=_xlabel,
+                ylabel=_ylabel,
+                title=_title,
+                legend=_legend
+            )
+        )
+
+    def update_vis_plot(iteration, loc, conf, window1, window2, update_type,
+                        epoch_size=1):
+        viz.line(
+            X=torch.ones((1, 3)).cpu() * iteration,
+            Y=torch.Tensor([loc, conf, loc + conf]).unsqueeze(0).cpu() / epoch_size,
+            win=window1,
+            update=update_type
+        )
+        # initialize epoch plot on first iteration
+        if iteration == 0:
+            viz.line(
+                X=torch.zeros((1, 3)).cpu(),
+                Y=torch.Tensor([loc, conf, loc + conf]).unsqueeze(0).cpu(),
+                win=window2,
+                update=True
+            )
+
     ssd_net = build_ssd('train', cfg['min_dim'], cfg['num_classes'])
     net = ssd_net
 
@@ -204,7 +233,6 @@ def train():
     torch.save(ssd_net.state_dict(),
                args.save_folder + '' + args.dataset + '.pth')
 
-
 def adjust_learning_rate(optimizer, gamma, step):
     """Sets the learning rate to the initial LR decayed by 10 at every
         specified step
@@ -215,47 +243,13 @@ def adjust_learning_rate(optimizer, gamma, step):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-
 def xavier(param):
     init.xavier_uniform(param)
-
 
 def weights_init(m):
     if isinstance(m, nn.Conv2d):
         xavier(m.weight.data)
         m.bias.data.zero_()
-
-
-def create_vis_plot(_xlabel, _ylabel, _title, _legend):
-    return viz.line(
-        X=torch.zeros((1,)).cpu(),
-        Y=torch.zeros((1, 3)).cpu(),
-        opts=dict(
-            xlabel=_xlabel,
-            ylabel=_ylabel,
-            title=_title,
-            legend=_legend
-        )
-    )
-
-
-def update_vis_plot(iteration, loc, conf, window1, window2, update_type,
-                    epoch_size=1):
-    viz.line(
-        X=torch.ones((1, 3)).cpu() * iteration,
-        Y=torch.Tensor([loc, conf, loc + conf]).unsqueeze(0).cpu() / epoch_size,
-        win=window1,
-        update=update_type
-    )
-    # initialize epoch plot on first iteration
-    if iteration == 0:
-        viz.line(
-            X=torch.zeros((1, 3)).cpu(),
-            Y=torch.Tensor([loc, conf, loc + conf]).unsqueeze(0).cpu(),
-            win=window2,
-            update=True
-        )
-
 
 if __name__ == '__main__':
     train()
