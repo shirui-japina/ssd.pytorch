@@ -166,7 +166,7 @@ def train():
         try:
             images, targets = next(batch_iterator)
         except StopIteration:
-            batch_iterator=iter(data_loader)
+            batch_iterator = iter(data_loader)
             images, targets = next(batch_iterator)
         # images, targets = next(batch_iterator)
 
